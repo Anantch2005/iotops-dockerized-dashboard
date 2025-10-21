@@ -63,6 +63,17 @@ iotops-dockerized-dashboard/
 git clone https://github.com/Anantch2005/iotops-dockerized-dashboard.git
 cd iotops-dockerized-dashboard
 
+or
+
+## Docker Hub Images
+You can also Pull and run the project with:
+```bash
+docker pull anant2005ch/iotops-dockerized-dashboard:frontend
+docker pull anant2005ch/iotops-dockerized-dashboard:backend
+docker run -p 5000:5000 anant2005ch/iotops-dockerized-dashboard:backend
+docker run -p 8080:80 anant2005ch/iotops-dockerized-dashboard:frontend
+
+
 2️⃣ Build & Start Containers
 docker-compose up --build
 
