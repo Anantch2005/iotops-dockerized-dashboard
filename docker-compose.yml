@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  backend:
+    container_name: iotops-backend
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - USE_SIMULATED=true
+    volumes:
+      - backend_data:/app/data 
+    restart: always
+
+  frontend:
+    container_name: iotops-frontend
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  backend_data:

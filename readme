@@ -1,0 +1,121 @@
+🧠 IoTOPS - Dockerized IoT Monitoring Dashboard
+-------------------------------------------------------------
+
+🚀 A Dockerized full-stack IoT monitoring dashboard that simulates real-time factory temperature & vibration data.
+Built with Flask (backend), Nginx (frontend), and Docker Compose for seamless DevOps deployment.
+
+-------------------------------------------------------------
+🌐 Project Overview
+-------------------------------------------------------------
+
+IoTOPS (IoT + DevOps) is a containerized real-time monitoring system that visualizes factory temperature and vibration data.
+It’s designed to showcase DevOps automation, containerization, and IoT data handling — all in one project.
+
+Even without physical sensors, the system can simulate data using `simulated_data.py`, making it fully functional for demonstration.
+
+-------------------------------------------------------------
+🧩 Tech Stack
+-------------------------------------------------------------
+
+Frontend: Nginx + HTML + JS — Interactive IoT dashboard UI
+Backend: Flask (Python) — REST API for sensor & simulated data
+Containerization: Docker, Docker Compose — Multi-service orchestration
+Database (Simulated): JSON-based — Stores readings & thresholds
+
+-------------------------------------------------------------
+⚙️ Features
+-------------------------------------------------------------
+
+✅ Real-time temperature & vibration monitoring
+✅ Adjustable threshold settings via dashboard
+✅ Simulated or sensor-based data input support
+✅ Containerized deployment (backend + frontend)
+✅ Auto-restarts using Docker Compose
+✅ Modular, production-ready structure
+
+-------------------------------------------------------------
+🗂️ Project Structure
+-------------------------------------------------------------
+
+iotops-dockerized-dashboard/
+│
+├── backend/
+│   ├── app.py
+│   ├── simulated_data.py
+│   ├── sensor_input.py
+│   ├── requirements.txt
+│   ├── thresholds.json
+│   ├── data.json
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── index.html
+│   └── Dockerfile
+│
+├── docker-compose.yml
+└── README.txt
+
+-------------------------------------------------------------
+🚀 How to Run
+-------------------------------------------------------------
+
+1️⃣ Clone the Repository
+git clone https://github.com/Anantch2005/iotops-dockerized-dashboard.git
+cd iotops-dockerized-dashboard
+
+2️⃣ Build & Start Containers
+docker-compose up --build
+
+3️⃣ Access the Dashboard
+Frontend: http://localhost:8080
+Backend API: http://localhost:5000/api/sensor-data
+
+-------------------------------------------------------------
+🧠 For Demonstration
+-------------------------------------------------------------
+
+Data generation mode can be switched using an environment variable:
+
+environment:
+  - USE_SIMULATED=true
+
+When you get real sensors (ESP32 or others), you can replace `simulated_data.py` with `sensor_input.py`.
+
+-------------------------------------------------------------
+🧰 DevOps Concepts Highlighted
+-------------------------------------------------------------
+
+🐳 Docker Multi-Stage Builds – lightweight backend image
+🔁 Docker Compose Orchestration – multi-container networking
+⚙️ Environment-based Configurations
+📦 Portable Deployment – runs identically on any host
+🧩 Code Modularity – independent frontend & backend services
+
+-------------------------------------------------------------
+📸 Sample Output (Simulation Mode)
+-------------------------------------------------------------
+
+- Real-time charts update every few seconds
+- Adjustable thresholds for both metrics
+- Status messages like “Normal Operation” or “Alert: Threshold Exceeded!”
+
+-------------------------------------------------------------
+📚 Future Improvements
+-------------------------------------------------------------
+
+✅ Add real sensor input integration (ESP32, DHT11, vibration sensor)
+✅ Add database (SQLite or InfluxDB) for persistent storage
+✅ Add CI/CD pipeline using GitHub Actions for automated testing & build
+
+-------------------------------------------------------------
+👨‍💻 Author
+-------------------------------------------------------------
+
+Anant Chaudhary
+Aspiring DevOps Engineer | Building end-to-end automation and IoT solutions.
+LinkedIn: https://linkedin.com/in/anant-chaudhary
+GitHub: https://github.com/Anantch2005
+
+-------------------------------------------------------------
+⭐ If you found this project helpful, don’t forget to star the repo!
+-------------------------------------------------------------

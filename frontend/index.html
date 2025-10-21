@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SensorSphere: Factory Pulse Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'sans-serif'] },
+          colors: {
+            primary: { 500: '#3b82f6', 600: '#2563eb' },
+            secondary: { 500: '#10b981', 600: '#059669' },
+            danger: { 500: '#ef4444', 600: '#dc2626' },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    #vanta-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: -1;
+      opacity: 0.15;
+    }
+    .card-blur {
+      backdrop-filter: blur(8px);
+      background-color: rgba(255, 255, 255, 0.85);
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    @media (max-width: 768px) {
+      .chart-container {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 font-sans min-h-screen">
+  <div id="vanta-bg"></div>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8 text-center">
+      <h1 class="text-4xl font-bold text-primary-600 mb-2">
+        Smart Factory IoT Dashboard
+      </h1>
+      <p class="text-gray-600 text-lg">
+        Real-time Temperature & Vibration Monitoring
+      </p>
+      <div class="mt-4 flex items-center justify-center">
+        <span
+          id="status-indicator"
+          class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
+        >
+          <span class="w-2 h-2 mr-2 rounded-full bg-green-500"></span> Normal
+          Operation
+        </span>
+      </div>
+    </header>
+
+    <!-- Alert Banner -->
+    <div
+      id="alert-banner"
+      class="hidden mb-6 p-4 rounded-lg bg-danger-100 border border-danger-200"
+    >
+      <div class="flex items-center">
+        <svg
+          class="w-6 h-6 text-danger-600 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          ></path>
+        </svg>
+        <span id="alert-message" class="text-danger-700 font-medium"></span>
+      </div>
+    </div>
+
+    <!-- Live Data Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="card-blur rounded-xl shadow-md p-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Temperature</h2>
+          <i data-feather="thermometer" class="text-primary-500"></i>
+        </div>
+        <div class="flex items-end justify-between">
+          <div>
+            <p class="text-5xl font-bold text-primary-600" id="current-temp">--</p>
+            <div class="flex items-center mt-2">
+              <p class="text-gray-500 text-sm mr-2">
+                Previous: <span id="previous-temp">--</span>°C
+              </p>
+              <span id="temp-trend" class="text-xs px-1.5 py-0.5 rounded"></span>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-500">Threshold:</p>
+            <p class="font-medium" id="temp-threshold-display">35°C</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-blur rounded-xl shadow-md p-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Vibration</h2>
+          <i data-feather="activity" class="text-secondary-500"></i>
+        </div>
+        <div class="flex items-end justify-between">
+          <div>
+            <p class="text-5xl font-bold text-secondary-600" id="current-vib">--</p>
+            <div class="flex items-center mt-2">
+              <p class="text-gray-500 text-sm mr-2">
+                Previous: <span id="previous-vib">--</span> Hz
+              </p>
+              <span id="vib-trend" class="text-xs px-1.5 py-0.5 rounded"></span>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-500">Threshold:</p>
+            <p class="font-medium" id="vib-threshold-display">25 Hz</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Threshold Controls -->
+    <div class="card-blur rounded-xl shadow-md p-6 border border-gray-200 mb-8">
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Threshold Settings</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="temp-threshold" class="block text-sm font-medium text-gray-700 mb-1">Max Temperature (°C)</label>
+          <div class="flex">
+            <input type="number" id="temp-threshold"
+              class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              value="35" min="20" max="50">
+            <button onclick="updateThreshold('temp')"
+              class="inline-flex items-center px-4 rounded-r-md border border-l-0 border-gray-300 bg-primary-500 text-white hover:bg-primary-600 focus:outline-none">
+              Update
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="vib-threshold" class="block text-sm font-medium text-gray-700 mb-1">Max Vibration (Hz)</label>
+          <div class="flex">
+            <input type="number" id="vib-threshold"
+              class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              value="25" min="10" max="40">
+            <button onclick="updateThreshold('vib')"
+              class="inline-flex items-center px-4 rounded-r-md border border-l-0 border-gray-300 bg-primary-500 text-white hover:bg-primary-600 focus:outline-none">
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 gap-8 mb-8">
+      <div class="card-blur rounded-xl shadow-md p-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Temperature History</h2>
+          <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-primary-500 mr-1"></span>
+            <span class="text-sm text-gray-500">Last 30 readings</span>
+          </div>
+        </div>
+        <div class="chart-container"><canvas id="tempChart"></canvas></div>
+      </div>
+
+      <div class="card-blur rounded-xl shadow-md p-6 border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Vibration History</h2>
+          <div class="flex items-center">
+            <span class="w-3 h-3 rounded-full bg-secondary-500 mr-1"></span>
+            <span class="text-sm text-gray-500">Last 30 readings</span>
+          </div>
+        </div>
+        <div class="chart-container"><canvas id="vibChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-gray-500 text-sm mt-12">
+      <p>SensorSphere Dashboard v1.0 | Last updated: <span id="last-updated">--</span></p>
+    </footer>
+  </div>
+
+  <script>
+    feather.replace();
+    VANTA.WAVES({
+      el: "#vanta-bg",
+      mouseControls: true,
+      touchControls: true,
+      minHeight: 200,
+      minWidth: 200,
+      scale: 1,
+      scaleMobile: 1,
+      color: 0x3b82f6,
+      shininess: 35,
+      waveHeight: 15,
+      waveSpeed: 0.5,
+      zoom: 0.65,
+    });
+
+    let tempThreshold = 35, vibThreshold = 25;
+    let currentTemp = 0, currentVib = 0;
+    let previousTemp = 0, previousVib = 0;
+    let alertActive = false;
+
+    // Charts setup
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
+    const vibCtx = document.getElementById('vibChart').getContext('2d');
+
+    const tempChart = new Chart(tempCtx, {
+      type: 'line',
+      data: { labels: Array(30).fill(''), datasets: [{ label: 'Temperature (°C)', data: Array(30).fill(0), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2, tension: 0.3, fill: true }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, suggestedMin: 20, suggestedMax: 50 } } }
+    });
+
+    const vibChart = new Chart(vibCtx, {
+      type: 'line',
+      data: { labels: Array(30).fill(''), datasets: [{ label: 'Vibration (Hz)', data: Array(30).fill(0), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, tension: 0.3, fill: true }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false, suggestedMin: 10, suggestedMax: 40 } } }
+    });
+
+    // --- Helper functions ---
+    function updateUIData() {
+      document.getElementById('current-temp').textContent = currentTemp.toFixed(1);
+      document.getElementById('current-vib').textContent = currentVib.toFixed(1);
+      document.getElementById('previous-temp').textContent = previousTemp.toFixed(1);
+      document.getElementById('previous-vib').textContent = previousVib.toFixed(1);
+      updateTrend('temp', currentTemp, previousTemp);
+      updateTrend('vib', currentVib, previousVib);
+      document.getElementById('temp-threshold-display').textContent = `${tempThreshold}°C`;
+      document.getElementById('vib-threshold-display').textContent = `${vibThreshold}Hz`;
+      document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+      checkAlerts();
+    }
+
+    function updateTrend(type, current, previous) {
+      const el = document.getElementById(`${type}-trend`);
+      const diff = current - previous;
+      if (diff > 0) el.innerHTML = `▲ ${diff.toFixed(1)}`, el.className = 'text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-800';
+      else if (diff < 0) el.innerHTML = `▼ ${Math.abs(diff).toFixed(1)}`, el.className = 'text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-800';
+      else el.innerHTML = '→ 0.0', el.className = 'text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-800';
+    }
+
+    function checkAlerts() {
+      const banner = document.getElementById('alert-banner');
+      const status = document.getElementById('status-indicator');
+      const msg = document.getElementById('alert-message');
+      let alertMsg = '';
+      if (currentTemp > tempThreshold)
+        alertMsg += `⚠️ Temperature ${currentTemp.toFixed(1)}°C exceeds limit (${tempThreshold}°C)`;
+      if (currentVib > vibThreshold) {
+        if (alertMsg) alertMsg += '<br>';
+        alertMsg += `⚠️ Vibration ${currentVib.toFixed(1)}Hz exceeds limit (${vibThreshold}Hz)`;
+      }
+      if (alertMsg) {
+        banner.classList.remove('hidden');
+        msg.innerHTML = alertMsg;
+        status.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-danger-100 text-danger-800';
+        status.innerHTML = '<span class="w-2 h-2 mr-2 rounded-full bg-danger-500"></span> Alert Condition';
+        alertActive = true;
+      } else if (alertActive) {
+        banner.classList.add('hidden');
+        status.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+        status.innerHTML = '<span class="w-2 h-2 mr-2 rounded-full bg-green-500"></span> Normal Operation';
+        alertActive = false;
+      }
+    }
+
+    async function fetchData() {
+      try {
+        const res = await axios.get('http://localhost:5000/api/data'); // ✅ FIXED
+        const data = res.data;
+        if (!data.length) return;
+        const latest = data[data.length - 1];
+        previousTemp = currentTemp;
+        previousVib = currentVib;
+        currentTemp = latest.temperature;
+        currentVib = latest.vibration;
+        tempChart.data.datasets[0].data.shift();
+        tempChart.data.datasets[0].data.push(currentTemp);
+        vibChart.data.datasets[0].data.shift();
+        vibChart.data.datasets[0].data.push(currentVib);
+        tempChart.update();
+        vibChart.update();
+        updateUIData();
+      } catch (err) {
+        console.error('Error fetching data', err);
+      }
+    }
+
+    async function updateThreshold(type) {
+      const el = document.getElementById(`${type}-threshold`);
+      const val = parseFloat(el.value);
+      if (isNaN(val)) return alert('Enter valid number');
+      if (type === 'temp') {
+        if (val < 20 || val > 50) return alert('Temperature 20–50°C');
+        tempThreshold = val;
+      } else {
+        if (val < 10 || val > 40) return alert('Vibration 10–40Hz');
+        vibThreshold = val;
+      }
+      updateUIData();
+      try {
+        await axios.post('http://localhost:5000/api/threshold', { type, value: val }); // ✅ FIXED
+      } catch (err) {
+        console.error('Error updating threshold', err);
+      }
+    }
+
+    // Start fetching
+    fetchData();
+    setInterval(fetchData, 3000);
+  </script>
+</body>
+</html>
