@@ -67,8 +67,12 @@ cd iotops-dockerized-dashboard
 docker-compose up --build
 
 3️⃣ Access the Dashboard
-Frontend: http://localhost:8080
-Backend API: http://localhost:5000/api/sensor-data
+
+Dashboard → http://localhost:8080
+
+API → http://localhost:5000/api/data
+
+Mode check → http://localhost:5000/api/mode
 
 -------------------------------------------------------------
 🧠 For Demonstration
